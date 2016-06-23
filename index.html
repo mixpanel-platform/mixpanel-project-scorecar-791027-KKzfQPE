@@ -5,46 +5,115 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.mxpnl.com/libs/mixpanel-platform/css/reset.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.mxpnl.com/libs/mixpanel-platform/build/mixpanel-platform.v0.latest.min.css">
     <script src="https://cdn.mxpnl.com/libs/mixpanel-platform/build/mixpanel-platform.v0.latest.min.js"></script>
+    <style>
+      h1{
+        font-size: 23px;
+        color: #545454;
+      }
+      .durationSumDiv{
+        font-size: 18px;
+        display: inline-block;
+        color: #545454;
+        font-weight: bold;
+      }
+      #webDurationSum{
+        font-size:22px;
+      }
+      #androidDurationSum{
+        font-size:22px;
+      }
+    </style>
   </head>
   <body class="mixpanel-platform-body">
     <div class="mixpanel-platform-section">
-      <div id="eventSelect" style="float: left;"></div>
-      <div id="by" class="mixpanel-platform-label" style="margin-left: 10px; display: none;">by</div>
-      <div id="propSelect" style="float: left;"></div>
-      <div id="dateSelect" style="float: right;"></div>
+      
+      <h1># Unique Events</h1><br clear="all" />
       <div style="clear: both;"></div>
       <div id="graph"></div>
+      <br clear="all" />
+      <hr /><br clear="all" />
+      
+      <h1># People Profiles</h1><br clear="all" />
+      <div style="clear: both;"></div>
+      <div id="graph2"></div>
+      <br clear="all" />
+      <hr /><br clear="all" />
+      
+      <h1># Event Properties</h1><br clear="all" />
+      <div style="clear: both;"></div>
+      <div id="graph3"></div>
+      <br clear="all" />
+      <hr /><br clear="all" />
+      
+      <h1># Notification Campaigns</h1><br clear="all" />
+      <div style="clear: both;"></div>
+      <div id="graph4"></div>
+      <br clear="all" />
+
+      
     </div>
-    <div id="table"></div>
     <script>
-      var eventSelect = $('#eventSelect').MPEventSelect();
-      var propSelect  = $('#propSelect').MPPropertySelect();
-      var dateSelect  = $('#dateSelect').MPDatepicker();
+      /* Unique event count graph */
       var eventGraph  = $('#graph').MPChart({chartType: 'line'});
-      var eventTable  = $('#table').MPTable({
-        showPercentages: true,
-        firstColHeader: 'Event'
+      var eventName = "Script Complete";
+      var propName  = "Event Count (unique)";
+      var project_id = getParameterByName("project_id", window.location.href);
+      if(project_id == null){
+        // Shouldn't get here...
+      }
+      var params = {
+        from: moment().subtract(30, 'weeks'),    
+        to: moment(), 
+        unit: 'week',
+        method: 'average',
+        //where: 'properties["Project ID"] == "'+project_id+'"',
+        limit: 255,
+        type: 'unique'
+      }
+      MP.api.segment(eventName, propName, params).done(function(results) {
+        var realResults = {};
+        realResults['Unique Event Count'] = results.values();
+        eventGraph.MPChart('setData', realResults);
       });
 
-      var runQuery = function() {
-        var eventName = eventSelect.MPEventSelect('value'),
-            propName  = propSelect.MPPropertySelect('value'),
-            dateRange = dateSelect.MPDatepicker('value');
-
-        if (eventName) {
-          MP.api.segment(eventName, propName, dateRange).done(function(results) {
-            eventGraph.MPChart('setData', results);
-            eventTable.MPTable('setData', results);
-          });
-        }
-      };
-      eventSelect.on('change', function(e, eventName) {
-        propSelect.MPPropertySelect('setEvent', eventName);
-        $("#by").show();
-        runQuery();
+      /* People profile count graph */
+      var eventGraph2  = $('#graph2').MPChart({chartType: 'line'});
+      var propName  = "People Prof Count";
+      MP.api.segment(eventName, propName, params).done(function(results) {
+        var realResults = {};
+        realResults['People Profile Count'] = results.values();
+        eventGraph2.MPChart('setData', realResults);
       });
-      propSelect.on('change', runQuery);
-      dateSelect.on('change', runQuery);
+      
+      /* Unique property count graph */
+      var eventGraph3  = $('#graph3').MPChart({chartType: 'line'});
+      var propName  = "Prop Count (unique)";
+      MP.api.segment(eventName, propName, params).done(function(results) {
+        var realResults = {};
+        realResults['Unique Property Count'] = results.values();
+        eventGraph3.MPChart('setData', realResults);
+      });
+      
+      /* Active campaign count graph */
+      var eventGraph4  = $('#graph4').MPChart({chartType: 'line'});
+      var propName  = "Active Campaign Count";
+      MP.api.segment(eventName, propName, params).done(function(results) {
+        var realResults = {};
+        realResults['Active Campaign Count'] = results.values();
+        eventGraph4.MPChart('setData', realResults);
+      });
+      
+      /* Helper function for URL Params */
+      function getParameterByName(name, url) {
+          if (!url) url = window.location.href;
+          url = url.toLowerCase();   
+          name = name.replace(/[\[\]]/g, "\\$&").toLowerCase();
+          var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+              results = regex.exec(url);
+          if (!results) return null;
+          if (!results[2]) return '';
+          return decodeURIComponent(results[2].replace(/\+/g, " "));
+      }
     </script>
   </body>
 </html>
